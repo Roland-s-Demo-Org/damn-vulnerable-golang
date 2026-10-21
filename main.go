@@ -14,7 +14,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -44,6 +46,12 @@ func main() {
 	// Best practice is to validate and sanitize user input before using it as a file path.
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		filePath := r.URL.Query().Get("path")
+		for _, seg := range strings.Split(filepath.ToSlash(filePath), "/") {
+			if seg == ".." {
+				http.Error(w, "Error reading file", http.StatusInternalServerError)
+				return
+			}
+		}
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			http.Error(w, "Error reading file", http.StatusInternalServerError)
